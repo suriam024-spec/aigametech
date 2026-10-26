@@ -1,0 +1,9 @@
+// error ที่รู้ status code -> errorHandler แปลงเป็น response ให้
+export class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}

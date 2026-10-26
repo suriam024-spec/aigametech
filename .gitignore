@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.env.local
+server/prisma/dev.db
+server/prisma/dev.db-journal
+out*.txt
+.vscode/

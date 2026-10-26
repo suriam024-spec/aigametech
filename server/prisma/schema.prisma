@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ตัวเลือกสเปค (ใช้เป็น dropdown + รายการที่ AI แนะนำได้) ----------
+
+model CpuOption {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  tier  Int // 1-5
+  note  String // ตัวอย่างคลาสของรุ่น เช่น "เข้ากับเกมระดับ 1080p Medium"
+  users User[]
+}
+
+model GpuOption {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  tier  Int // 1-5
+  note  String
+  users User[]
+}
+
+// ---------- Users ----------
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("user") // "user" | "admin"
+  createdAt    DateTime @default(now())
+
+  // สเปคเครื่อง (nullable = ยังไม่ตั้ง)
+  cpuId Int?
+  gpuId Int?
+  ramGb Int?
+  cpu   CpuOption? @relation(fields: [cpuId], references: [id])
+  gpu   GpuOption? @relation(fields: [gpuId], references: [id])
+
+  favorites Favorite[]
+  searches  SearchHistory[]
+  views     GameView[]
+}
+
+// ---------- Games ----------
+// หมายเหตุ: SQLite ไม่มี array -> genres/tags/platforms เก็บเป็น JSON string
+// เช่น '["RPG","Action"]' (parse/stringify ที่ชั้น service)
+// multiplayer = มีโหมดเล่นกับคนอื่น (ออนไลน์/co-op/local)
+// requirements: tier 1-5, null = ไม่มีข้อมูล/ไม่ใช่เกม PC (ข้ามการเช็คสเปค)
+
+model Game {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  genres      String // JSON string[]
+  tags        String // JSON string[]
+  platforms   String // JSON string[]
+  price       Int // บาท, 0 = ฟรี
+  releaseDate DateTime
+  difficulty  String // "Easy" | "Medium" | "Hard"
+  multiplayer Boolean
+  playTime    Int // ชั่วโมงโดยประมาณ
+  isIndie     Boolean
+  image       String
+
+  minCpuTier Int?
+  minGpuTier Int?
+  minRamGb   Int?
+  recCpuTier Int?
+  recGpuTier Int?
+  recRamGb   Int?
+
+  favorites Favorite[]
+  views     GameView[]
+}
+
+// ---------- Activity ----------
+
+model Favorite {
+  userId    Int
+  gameId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId])
+}
+
+model SearchHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  query     String
+  filters   String? // JSON string (filter ที่ใช้ตอนค้นหา)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model GameView {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  gameId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([gameId])
+}
