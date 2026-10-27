@@ -23,6 +23,7 @@ export default function Layout() {
               <NavLink to="/explore" className={linkClass}>สำรวจเกม</NavLink>
               {user && <NavLink to="/favorites" className={linkClass}>รายการโปรด</NavLink>}
               {user && <NavLink to="/specs" className={linkClass}>สเปคของฉัน</NavLink>}
+              {user?.role === "admin" && <NavLink to="/admin" className={linkClass}>Admin</NavLink>}
             </nav>
           </div>
 

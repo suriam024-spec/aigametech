@@ -8,6 +8,7 @@ import ExplorePage from "@/pages/ExplorePage";
 import GameDetailPage from "@/pages/GameDetailPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 import SpecsPage from "@/pages/SpecsPage";
+import AdminPage from "@/pages/AdminPage";
 
 export default function App() {
   return (
@@ -33,6 +34,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <SpecsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="admin"
+              element={
+                <RequireAuth>
+                  <AdminPage />
                 </RequireAuth>
               }
             />
