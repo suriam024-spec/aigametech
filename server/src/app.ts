@@ -13,6 +13,7 @@ import aiRoutes from "./routes/aiRoutes";
 
 export function createApp() {
   const app = express();
+  if (process.env.TRUST_PROXY) app.set("trust proxy", 1);
 
   app.use(cors({ origin: config.clientOrigin }));
   app.use(express.json({ limit: "100kb" }));

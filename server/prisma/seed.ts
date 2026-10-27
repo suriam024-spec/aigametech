@@ -6,6 +6,13 @@ const prisma = new PrismaClient();
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
+const passwordFor = (u: { role: string; password: string }) => {
+  const p = process.env.ADMIN_PASSWORD;
+  if (u.role !== "admin" || !p) return u.password;
+  if (p.length < 10) throw new Error("ADMIN_PASSWORD ต้องยาวอย่างน้อย 10 ตัวอักษร");
+  return p;
+};
+
 async function main() {
   // ล้างข้อมูลเก่า (เรียงจากตารางลูกไปตารางแม่) -> รันซ้ำได้
   await prisma.gameView.deleteMany();
@@ -54,7 +61,7 @@ async function main() {
     await prisma.user.create({
       data: {
         email: u.email,
-        passwordHash: await bcrypt.hash(u.password, 10),
+        passwordHash: await bcrypt.hash(passwordFor(u), 10),
         role: u.role,
         cpuId: u.spec ? cpus.find((c) => c.name === u.spec!.cpu)!.id : null,
         gpuId: u.spec ? gpus.find((x) => x.name === u.spec!.gpu)!.id : null,
@@ -106,7 +113,10 @@ async function main() {
   console.log("Seed สำเร็จ ✔");
   console.table({ cpus: nCpu, gpus: nGpu, games: nGame, users: nUser, views: nView, favorites: nFav, searches: nSearch });
   console.log("\nบัญชีตัวอย่าง:");
-  for (const u of DEMO_USERS) console.log(`  ${u.role.padEnd(5)} ${u.email}  /  ${u.password}`);
+  for (const u of DEMO_USERS) {
+    const shown = u.role === "admin" && process.env.ADMIN_PASSWORD ? "(ตามค่า ADMIN_PASSWORD)" : u.password;
+    console.log(`  ${u.role.padEnd(5)} ${u.email}  /  ${shown}`);
+  }
 }
 
 main()
