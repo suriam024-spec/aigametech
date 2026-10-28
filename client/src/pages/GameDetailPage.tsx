@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -18,6 +18,23 @@ type UpgradeAdviceResponse = {
   status: "smooth" | "minimum" | "fail";
   notice: string | null;
 };
+
+// ปุ่มไปร้านค้า: ค่าเริ่มต้นคือค้นหาใน Steam ส่วนเกมที่ไม่ได้ขายบน Steam ระบุเว็บทางการแทน
+const OFFICIAL_SITES: Record<string, string> = {
+  Valorant: "https://playvalorant.com",
+  Minecraft: "https://www.minecraft.net",
+};
+
+function storeLink(game: GameDto): { url: string; label: string } | null {
+  // เกมที่ไม่มีบน PC (คอนโซลล้วน) ไม่แสดงปุ่ม
+  if (!game.platforms.some((p) => p.toLowerCase() === "pc")) return null;
+  const official = OFFICIAL_SITES[game.name];
+  if (official) return { url: official, label: "เว็บทางการ" };
+  return {
+    url: `https://store.steampowered.com/search/?term=${encodeURIComponent(game.name)}`,
+    label: "ค้นหาใน Steam",
+  };
+}
 
 function SpecTable({ game }: { game: GameDto }) {
   const req = game.requirements;
@@ -79,6 +96,7 @@ export default function GameDetailPage() {
 
   const game = data;
   const showUpgrade = game.specCheck?.status === "fail" || game.specCheck?.status === "minimum";
+  const store = storeLink(game);
 
   const adviceLoading = adviceLoadingId === game.id;
   const shownAdvice = advice !== null && advice.gameId === game.id ? advice.data : null;
@@ -144,7 +162,7 @@ export default function GameDetailPage() {
             )}
           </dl>
 
-          {/* ปุ่ม: Favorite (ขั้น 5) / AI Upgrade Advisor (ขั้น 9) */}
+                    {/* ปุ่ม: Favorite (ขั้น 5) / AI Upgrade Advisor (ขั้น 9) / ไปร้านค้า (ขั้น 12) */}
           <div className="flex flex-wrap gap-2 pt-2">
             <FavoriteButton key={game.id} gameId={game.id} initial={game.isFavorite} variant="full" />
             {showUpgrade && (
@@ -157,10 +175,21 @@ export default function GameDetailPage() {
                 {adviceLoading ? "AI กำลังคิด..." : "AI Upgrade Advisor"}
               </Button>
             )}
+            {store && (
+              <a
+                href={store.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-sm font-medium transition hover:border-primary/60"
+              >
+                <ExternalLink className="h-4 w-4" />
+                {store.label}
+              </a>
+            )}
           </div>
         </div>
       </div>
-
+    
       {(adviceLoading || shownAdvice || shownError) && (
         <section className="space-y-3 rounded-xl border border-primary/40 bg-card p-4">
           <h2 className="font-heading flex items-center gap-2 text-lg font-extrabold">
